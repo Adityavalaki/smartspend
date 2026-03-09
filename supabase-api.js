@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════
 
 var SUPABASE_URL = 'https://ehufyimcowsiujnnxurm.supabase.co';      // 🔴 Replace with your Project URL
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVodWZ5aW1jb3dzaXVqbm54dXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDU4MjUsImV4cCI6MjA4ODQ4MTgyNX0.hwgEg3FAnAy_HQBwdAAk4_zw6dXStfeeHhSGmAzXdEY'; // 🔴 Replace with your anon/public key
+var SUPABASE_KEY = 'sb_publishable_X54IuEq3IvU1UvprU3Mu-Q_x3ReTXtT'; // 🔴 Replace with your anon/public key
 
 var _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
