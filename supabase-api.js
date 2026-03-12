@@ -247,20 +247,45 @@ async function _sbPOST(url, data) {
   var p   = u.path;
   var q   = u.params;
 
-  // ── ADD TRANSACTION ───────────────────────────
+// ── ADD TRANSACTION ───────────────────────────
   if (p.indexOf('transactions') !== -1) {
+    var amt     = parseFloat(data.amount);
+    var payMode = data.pay_mode || 'cash';
+    var txType  = data.type;
+
     var ins = {
       user_id:     uid,
-      amount:      parseFloat(data.amount),
+      amount:      amt,
       category:    data.category,
-      type:        data.type,
-      pay_mode:    data.pay_mode || 'cash',
+      type:        txType,
+      pay_mode:    payMode,
       tx_date:     data.date,
       description: data.description || '',
       recurring:   !!(data.recurring)
     };
     var res = await _sb.from('ss_transactions').insert(ins).select().single();
     if (res.error) throw res.error;
+
+    // ── AUTO UPDATE WALLET ──────────────────────
+    var walletName = (payMode === 'cash') ? 'cash' : 'digital';
+    var wRes = await _sb.from('ss_wallets')
+      .select('balance')
+      .eq('user_id', uid)
+      .eq('name', walletName)
+      .single();
+
+    if (!wRes.error && wRes.data) {
+      var currentBal = parseFloat(wRes.data.balance);
+      var newBal = txType === 'income'
+        ? currentBal + amt
+        : currentBal - amt;
+      await _sb.from('ss_wallets')
+        .update({ balance: newBal })
+        .eq('user_id', uid)
+        .eq('name', walletName);
+    }
+    // ───────────────────────────────────────────
+
     var row = Object.assign({}, res.data, { amount: parseFloat(res.data.amount), recurring: !!res.data.recurring });
     return { status: 'created', transaction: row };
   }
