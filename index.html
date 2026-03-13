@@ -316,6 +316,17 @@ select.fi option{background:var(--bge);color:var(--tx)}
   .cg{grid-template-columns:repeat(3,1fr)}
   .pm-grid{grid-template-columns:repeat(3,1fr)}
 }
+
+.bot-nav-in {
+  overflow-x: auto;
+  scrollbar-width: none;
+  justify-content: flex-start;
+  gap: 2px;
+}
+.bot-nav-in::-webkit-scrollbar { display: none; }
+.bn { min-width: 60px; padding: 8px 4px; }
+.bn-lbl { font-size: 8px; }
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-api.js"></script>
@@ -667,7 +678,11 @@ select.fi option{background:var(--bge);color:var(--tx)}
 <div class="bot-nav-in">
   <button class="bn on" data-tab="dashboard"><div class="bn-ico">⬡</div><div class="bn-lbl">Home</div></button>
   <button class="bn" data-tab="wallets"><div class="bn-ico">👛</div><div class="bn-lbl">Wallets</div></button>
+  <button class="bn" data-tab="add"><div class="bn-ico">＋</div><div class="bn-lbl">Add</div></button>
   <button class="bn" data-tab="transactions"><div class="bn-ico">↕</div><div class="bn-lbl">History</div></button>
+  <button class="bn" data-tab="budget"><div class="bn-ico">▦</div><div class="bn-lbl">Budget</div></button>
+  <button class="bn" data-tab="goals"><div class="bn-ico">◎</div><div class="bn-lbl">Goals</div></button>
+  <button class="bn" data-tab="split"><div class="bn-ico">⇌</div><div class="bn-lbl">Split</div></button>
   <button class="bn" data-tab="analytics"><div class="bn-ico">≋</div><div class="bn-lbl">Analytics</div></button>
   <button class="bn" data-tab="settings"><div class="bn-ico">◈</div><div class="bn-lbl">Settings</div></button>
 </div>
