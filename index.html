@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SmartSpend">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -751,5 +756,10 @@ select.fi option{background:var(--bge);color:var(--tx)}
   <a href="https://www.linkedin.com/in/aditya-j-valaki/" target="_blank" style="color:#00d4b8;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(0,212,184,.3)">Aditya Valaki</a>
 </div>
 <script src="app.js?v=5"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
 </body>
 </html>
