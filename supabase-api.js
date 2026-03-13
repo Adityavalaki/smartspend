@@ -411,15 +411,15 @@ async function sbSignIn(email, pass) {
   const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
   if (error) throw error;
 
-  // Auto-create wallets if they don't exist
-  const uid = data.user.id;
-  const { data: wallets } = await _sb.from('ss_wallets').select('id').eq('user_id', uid);
-  if (!wallets || wallets.length === 0) {
-    await _sb.from('ss_wallets').insert([
-      { user_id: uid, name: 'cash', balance: 0 },
-      { user_id: uid, name: 'digital', balance: 0 }
-    ]);
-  }
+  // Auto-create wallets for new users
+const uid = data.user.id;
+const { data: wallets } = await _sb.from('ss_wallets').select('id').eq('user_id', uid);
+if (!wallets || wallets.length === 0) {
+  await _sb.from('ss_wallets').insert([
+    { user_id: uid, name: 'cash', balance: 0 },
+    { user_id: uid, name: 'digital', balance: 0 }
+  ]);
+}
   return data;
 }
 
