@@ -164,18 +164,8 @@ async function doRegister() {
   setBusy('r-btn', true);
   try {
     await sbSignUp(email, pass, name);
-    // Show verification message, stay on register panel
-    document.getElementById('pnl-register').innerHTML = `
-      <div style="text-align:center;padding:20px 0">
-        <div style="font-size:48px;margin-bottom:16px">📧</div>
-        <div class="ttl" style="margin-bottom:8px">Check your email!</div>
-        <div class="sub" style="margin-bottom:24px">We sent a confirmation link to<br><strong style="color:#00d4b8">${email}</strong></div>
-        <div style="background:rgba(0,212,184,.07);border:1px solid rgba(0,212,184,.15);border-radius:12px;padding:16px;font-size:13px;color:#6b82a0;margin-bottom:24px;line-height:1.6">
-          Click the link in your email to activate your account. Check your spam folder if you don't see it.
-        </div>
-        <button class="btn" onclick="switchTab('login')">Go to Sign In →</button>
-      </div>
-    `;
+    switchTab('login');
+    showOk('📧 Account created! Please check your email and click the confirmation link before signing in.');
   } catch(e) {
     showErr(e.message || 'Registration failed.');
     document.getElementById('r-btn').disabled = false;
