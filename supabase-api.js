@@ -407,10 +407,20 @@ async function _sbDEL(url) {
 // ═══════════════════════════════════════════════════
 // AUTH — called from login.html
 // ═══════════════════════════════════════════════════
-async function sbSignIn(email, password) {
-  var res = await _sb.auth.signInWithPassword({ email: email, password: password });
-  if (res.error) throw res.error;
-  return res.data;
+async function sbSignIn(email, pass) {
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  if (error) throw error;
+
+  // Auto-create wallets if they don't exist
+  const uid = data.user.id;
+  const { data: wallets } = await _sb.from('ss_wallets').select('id').eq('user_id', uid);
+  if (!wallets || wallets.length === 0) {
+    await _sb.from('ss_wallets').insert([
+      { user_id: uid, name: 'cash', balance: 0 },
+      { user_id: uid, name: 'digital', balance: 0 }
+    ]);
+  }
+  return data;
 }
 
 async function sbSignUp(email, password, name) {
