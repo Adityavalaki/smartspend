@@ -147,7 +147,8 @@ async function doLogin() {
   try {
     await sbSignIn(email, pass);
     showOk('Signed in! Redirecting...');
-    setTimeout(function(){ window.location.href = 'index.html'; }, 500);
+    // Small delay so Firebase auth state saves properly
+    setTimeout(function(){ window.location.href = 'index.html'; }, 1000);
   } catch(e) {
     showErr(e.message || 'Login failed.');
     document.getElementById('l-btn').disabled = false;

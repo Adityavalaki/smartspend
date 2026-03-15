@@ -426,10 +426,15 @@ async function sbSignOut() {
 }
 
 async function sbCheckSession() {
-  return new Promise(function(res) {
-    _auth.onAuthStateChanged(function(user) {
-      if (!user) window.location.href = 'login.html';
-      else res(user);
+  return new Promise(function(resolve) {
+    var unsubscribe = _auth.onAuthStateChanged(function(user) {
+      unsubscribe();
+      document.documentElement.style.visibility = 'visible';
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        resolve(user);
+      }
     });
   });
 }
