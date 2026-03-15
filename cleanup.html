@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmartSpend — Cleanup & Re-migrate</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background:#07090f; color:#e2ecf8; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .box { background:#0d1117; border:1px solid rgba(255,255,255,.07); border-radius:20px; padding:40px; max-width:540px; width:100%; }
+  h1 { font-size:22px; font-weight:800; margin-bottom:6px; color:#ff4f6d; }
+  .sub { font-size:13px; color:#6b82a0; margin-bottom:28px; }
+  .btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .btn { padding:14px; font-size:14px; font-weight:700; border:none; border-radius:12px; cursor:pointer; transition:all .3s; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-red  { background:linear-gradient(135deg,#ff4f6d,#cc3355); color:#fff; }
+  .btn-green{ background:linear-gradient(135deg,#00d4b8,#00b39a); color:#07090f; }
+  .btn-full { grid-column:1/-1; }
+  .log { background:#07090f; border-radius:12px; padding:16px; max-height:360px; overflow-y:auto; font-family:monospace; font-size:12px; line-height:1.8; }
+  .ok  { color:#1de982; }
+  .err { color:#ff4f6d; }
+  .inf { color:#6b82a0; }
+  .warn{ color:#ffb800; }
+  .done { text-align:center; margin-top:20px; padding:16px; background:rgba(0,212,184,.08); border:1px solid rgba(0,212,184,.2); border-radius:12px; color:#00d4b8; font-weight:700; display:none; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>🧹 SmartSpend Cleanup</h1>
+  <div class="sub">Step 1: Clear all duplicate data → Step 2: Re-import once cleanly</div>
+  <div class="btns">
+    <button class="btn btn-red"   id="btn-clear"   onclick="clearAll()">🗑️ Step 1: Clear All Data</button>
+    <button class="btn btn-green" id="btn-migrate" onclick="runMigration()" disabled>🚀 Step 2: Import Fresh</button>
+  </div>
+  <div class="log" id="log"><span class="inf">Ready. Click Step 1 first to clear duplicates, then Step 2 to re-import.</span></div>
+  <div class="done" id="done">✅ Done! Delete this file from GitHub and open smartspend.dev 🎉</div>
+</div>
+
+<script>
+var FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCAGIWZPhroAJFZT8yeYHT5xeETPhP-cnc",
+  authDomain:        "smartspend-e7aa1.firebaseapp.com",
+  projectId:         "smartspend-e7aa1",
+  storageBucket:     "smartspend-e7aa1.firebasestorage.app",
+  messagingSenderId: "1082968617324",
+  appId:             "1:1082968617324:web:88d10070a528ea109a8349"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+var db = firebase.firestore();
+var UID = 'OhKaQ7ZHCSbOQzGFUwWX0lJDLnx1';
+
+var TRANSACTIONS = [
+  { amount:500,  category:"Bonus",          type:"income",  pay_mode:"upi",  tx_date:"2026-03-06", description:"Kamlesh kaka ae apya",       recurring:false, created_at:"2026-03-06T09:24:55+00:00" },
+  { amount:142,  category:"Transport",      type:"expense", pay_mode:"upi",  tx_date:"2026-03-06", description:"AHM -> Anand",                recurring:false, created_at:"2026-03-06T09:26:14+00:00" },
+  { amount:191,  category:"Subscriptions",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-06", description:"JIO Recharge",                recurring:false, created_at:"2026-03-06T09:27:00+00:00" },
+  { amount:340,  category:"Other",          type:"income",  pay_mode:"cash", tx_date:"2026-03-06", description:"",                            recurring:false, created_at:"2026-03-06T09:31:57+00:00" },
+  { amount:47,   category:"Other",          type:"income",  pay_mode:"upi",  tx_date:"2026-03-06", description:"Already hata",                recurring:false, created_at:"2026-03-06T09:42:12+00:00" },
+  { amount:50,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-06", description:"Nasto",                       recurring:false, created_at:"2026-03-06T11:23:01+00:00" },
+  { amount:52,   category:"Transport",      type:"expense", pay_mode:"upi",  tx_date:"2026-03-07", description:"Rapido",                      recurring:false, created_at:"2026-03-07T06:14:26+00:00" },
+  { amount:120,  category:"Food & Dining",  type:"expense", pay_mode:"cash", tx_date:"2026-03-07", description:"Bhakharvadi",                 recurring:false, created_at:"2026-03-07T16:17:45+00:00" },
+  { amount:180,  category:"Food & Dining",  type:"expense", pay_mode:"cash", tx_date:"2026-03-07", description:"Soya stick and chips",        recurring:false, created_at:"2026-03-07T16:19:04+00:00" },
+  { amount:91,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-08", description:"Biscuit + milk",              recurring:false, created_at:"2026-03-08T17:31:58+00:00" },
+  { amount:20,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-10", description:"Biscuit",                     recurring:false, created_at:"2026-03-10T15:30:35+00:00" },
+  { amount:40,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-10", description:"Samosa",                      recurring:false, created_at:"2026-03-10T15:30:49+00:00" },
+  { amount:7500, category:"Allowance",      type:"income",  pay_mode:"upi",  tx_date:"2026-03-11", description:"Terror funding",              recurring:false, created_at:"2026-03-11T09:54:44+00:00" },
+  { amount:1500, category:"Tuition",        type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"Sem 6 exam fees",             recurring:false, created_at:"2026-03-11T09:55:10+00:00" },
+  { amount:4,    category:"Study",          type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"Xerox",                       recurring:false, created_at:"2026-03-11T09:55:28+00:00" },
+  { amount:500,  category:"Accommodation",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"Petrol",                      recurring:false, created_at:"2026-03-11T12:53:42+00:00" },
+  { amount:59,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"Milk + chocolate",            recurring:false, created_at:"2026-03-11T12:55:39+00:00" },
+  { amount:100,  category:"Misc",           type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"karan ne udhar",              recurring:false, created_at:"2026-03-11T12:56:39+00:00" },
+  { amount:328,  category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"poojan ne ana lapinoz na",    recurring:false, created_at:"2026-03-11T16:25:51+00:00" },
+  { amount:100,  category:"Bonus",          type:"income",  pay_mode:"upi",  tx_date:"2026-03-11", description:"papa",                        recurring:false, created_at:"2026-03-12T05:42:43+00:00" },
+  { amount:150,  category:"Misc",           type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"yashvi ne ana",               recurring:false, created_at:"2026-03-12T05:43:48+00:00" },
+  { amount:18,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-11", description:"soda",                        recurring:false, created_at:"2026-03-12T05:44:08+00:00" },
+  { amount:719,  category:"Subscriptions",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-12", description:"FanCode F1 Yearly Pass",      recurring:false, created_at:"2026-03-12T05:44:40+00:00" },
+  { amount:26,   category:"Study",          type:"expense", pay_mode:"upi",  tx_date:"2026-03-12", description:"xerox",                       recurring:false, created_at:"2026-03-12T05:45:11+00:00" },
+  { amount:55,   category:"Subscriptions",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-12", description:"jio Postpaid",                recurring:false, created_at:"2026-03-12T05:45:51+00:00" },
+  { amount:7,    category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-12", description:"Pepsi",                       recurring:false, created_at:"2026-03-12T17:07:50+00:00" },
+  { amount:30,   category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-12", description:"Food",                        recurring:false, created_at:"2026-03-12T17:08:24+00:00" },
+  { amount:100,  category:"Food & Dining",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-13", description:"Nasto",                       recurring:false, created_at:"2026-03-13T12:17:08+00:00" },
+  { amount:5,    category:"Personal Care",  type:"expense", pay_mode:"upi",  tx_date:"2026-03-14", description:"Pepsi",                       recurring:false, created_at:"2026-03-15T05:57:46+00:00" }
+];
+
+var WALLETS   = [{ name:'cash', balance:500 }, { name:'digital', balance:3500 }];
+var SETTINGS  = [{ key:'budget_limit', value:'6000' }, { key:'alert_threshold', value:'80' }, { key:'savings_target', value:'500' }, { key:'currency', value:'₹' }];
+var TRANSFERS = [
+  { from_wallet:'cash',    to_wallet:'digital', amount:40,  note:'', tx_date:'2026-03-09', created_at:'2026-03-09T19:40:58+00:00' },
+  { from_wallet:'digital', to_wallet:'cash',    amount:500, note:'', tx_date:'2026-03-11', created_at:'2026-03-11T12:54:43+00:00' }
+];
+var GOALS = [{ name:'Shoes', target_amount:2000, saved_amount:0, target_date:'2026-07-10', created_at:'2026-03-10T15:33:05+00:00' }];
+
+function log(msg, type) {
+  var div = document.getElementById('log');
+  var span = document.createElement('div');
+  span.className = type || 'inf';
+  span.textContent = msg;
+  div.appendChild(span);
+  div.scrollTop = div.scrollHeight;
+}
+
+function col(name) { return db.collection('users').doc(UID).collection(name); }
+
+async function deleteCollection(name) {
+  var snap = await col(name).get();
+  var batch = db.batch();
+  snap.forEach(function(doc) { batch.delete(doc.ref); });
+  await batch.commit();
+  log('🗑️ Cleared ' + snap.size + ' docs from ' + name, 'warn');
+}
+
+async function clearAll() {
+  document.getElementById('btn-clear').disabled = true;
+  document.getElementById('log').innerHTML = '';
+  log('Clearing all existing data...', 'inf');
+  try {
+    await deleteCollection('transactions');
+    await deleteCollection('transfers');
+    await deleteCollection('goals');
+    await deleteCollection('wallets');
+    await deleteCollection('settings');
+    log('✅ All data cleared!', 'ok');
+    log('Now click Step 2 to import fresh data.', 'inf');
+    document.getElementById('btn-migrate').disabled = false;
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'err');
+    document.getElementById('btn-clear').disabled = false;
+  }
+}
+
+async function runMigration() {
+  document.getElementById('btn-migrate').disabled = true;
+  log('', 'inf');
+  log('Importing fresh data...', 'inf');
+  try {
+    // Wallets
+    for (var w of WALLETS) {
+      await col('wallets').doc(w.name).set({ balance: w.balance });
+      log('✓ Wallet: ' + w.name + ' = ₹' + w.balance, 'ok');
+    }
+    // Settings
+    for (var s of SETTINGS) {
+      await col('settings').doc(s.key).set({ value: s.value });
+      log('✓ Setting: ' + s.key, 'ok');
+    }
+    // Transactions
+    log('Importing ' + TRANSACTIONS.length + ' transactions...', 'inf');
+    for (var i = 0; i < TRANSACTIONS.length; i++) {
+      await col('transactions').add(TRANSACTIONS[i]);
+      log('✓ [' + (i+1) + '/' + TRANSACTIONS.length + '] ' + TRANSACTIONS[i].description + ' ₹' + TRANSACTIONS[i].amount, 'ok');
+    }
+    // Transfers
+    for (var tr of TRANSFERS) {
+      await col('transfers').add(tr);
+      log('✓ Transfer: ' + tr.from_wallet + ' → ' + tr.to_wallet + ' ₹' + tr.amount, 'ok');
+    }
+    // Goals
+    for (var g of GOALS) {
+      await col('goals').add(g);
+      log('✓ Goal: ' + g.name, 'ok');
+    }
+    log('', 'inf');
+    log('🎉 All data imported correctly!', 'ok');
+    document.getElementById('done').style.display = 'block';
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'err');
+    document.getElementById('btn-migrate').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
